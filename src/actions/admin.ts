@@ -6,21 +6,25 @@ import { redirect } from 'next/navigation'
 
 // ─── Autenticación ────────────────────────────────────────────────
 
+export type SignInResult = { ok: true } | { ok: false; error: string }
+
 export async function signIn(
-  _prev: { error: string } | null,
+  _prev: SignInResult | null,
   formData: FormData
-): Promise<{ error: string } | null> {
+): Promise<SignInResult> {
   const email    = (formData.get('email')    as string)?.trim()
   const password = (formData.get('password') as string)
 
-  if (!email || !password) return { error: 'Correo y contraseña requeridos.' }
+  if (!email || !password) return { ok: false, error: 'Correo y contraseña requeridos.' }
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-  if (error) return { error: 'Credenciales incorrectas. Intenta de nuevo.' }
+  if (error) return { ok: false, error: 'Credenciales incorrectas. Intenta de nuevo.' }
 
-  redirect('/admin')
+  // No llamar redirect() aquí: useActionState + redirect() no navega el browser en Next.js 16.
+  // El cliente detecta ok: true y llama router.push('/admin').
+  return { ok: true }
 }
 
 export async function signOut() {

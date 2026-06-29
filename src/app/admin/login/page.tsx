@@ -1,11 +1,22 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { signIn } from '@/actions/admin'
 import { AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [state, formAction, isPending] = useActionState(signIn, null)
+
+  // signIn retorna { ok: true } cuando las credenciales son correctas.
+  // redirect() dentro de useActionState no navega el browser en Next.js 16,
+  // por eso manejamos la navegación aquí en el cliente.
+  useEffect(() => {
+    if (state?.ok) {
+      router.push('/admin')
+    }
+  }, [state, router])
 
   return (
     <main className="min-h-screen bg-cream flex items-center justify-center px-6">
@@ -46,7 +57,8 @@ export default function LoginPage() {
             />
           </div>
 
-          {state?.error && (
+          {/* Error de credenciales */}
+          {state && !state.ok && (
             <div className="flex items-center gap-2 text-destructive border border-destructive/30 bg-destructive/5 rounded p-3">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
               <p className="font-sans text-sm">{state.error}</p>
@@ -55,10 +67,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || state?.ok === true}
             className="w-full bg-accent hover:bg-accent-hover disabled:opacity-60 text-cream font-sans text-sm rounded py-3 transition-colors mt-2"
           >
-            {isPending ? 'Iniciando sesión…' : 'Entrar'}
+            {isPending || state?.ok ? 'Iniciando sesión…' : 'Entrar'}
           </button>
         </form>
 
